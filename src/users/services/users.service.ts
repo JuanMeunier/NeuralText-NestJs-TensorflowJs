@@ -1,26 +1,66 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateProfileDto } from '../dto/update-user.dto';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) { }
+
+  // Para el sistema de auth (Google OAuth)
+  async findOrCreate(userData: CreateUserDto): Promise<User> {
+    let user = await this.userRepository.findOne({
+      where: { googleId: userData.googleId }
+    });
+
+    if (!user) {
+      user = this.userRepository.create(userData);
+      await this.userRepository.save(user);
+    } else {
+      // Actualizar datos de Google por si cambiaron
+      user.name = userData.name;
+      user.picture = userData.picture;
+      await this.userRepository.save(user);
+    }
+
+    return user;
   }
 
-  findAll() {
-    return `This action returns all users`;
+  // Para el JWT Guard
+  async findById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id } });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  // Para que el usuario vea su perfil
+  async getProfile(userId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'name', 'picture', 'createdAt'] // Sin googleId
+    });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  // Para actualizar perfil
+  async updateProfile(userId: string, updateData: UpdateProfileDto): Promise<User | null> {
+    await this.userRepository.update(userId, updateData);
+    return this.getProfile(userId);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  // Para eliminar cuenta (GDPR)
+  async deleteAccount(userId: string): Promise<User> {
+    const result = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'name', 'picture', 'createdAt'] // Sin googleId
+    });
+    if (!result) {
+      throw new Error('User not found');
+    }
+    await this.userRepository.delete(userId);
+    return result;
+
   }
 }

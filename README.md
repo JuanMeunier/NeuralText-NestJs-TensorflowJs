@@ -79,7 +79,7 @@ npm run test:e2e
 
 
 ## 📦 Tecnologías Utilizadas
-
+8
 - **Framework**: NestJS
 - **Base de Datos**: PostgreSQL + TypeORM
 - **IA**: Transformers.js (Xenova)
