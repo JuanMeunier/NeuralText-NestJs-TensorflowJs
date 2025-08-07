@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from 'src/users/services/users.service';
+import { UsersService } from '../../users/services/users.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -10,16 +10,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         private configService: ConfigService,
         private usersService: UsersService,
     ) {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+
+        // Validar que JWT_SECRET existe
+        if (!jwtSecret) {
+            throw new Error('JWT_SECRET is not defined in environment variables');
+        }
+
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: configService.get<string>('auth.jwtSecret'),
+            secretOrKey: jwtSecret, // Ahora TypeScript sabe que NO es undefined
         });
     }
 
     async validate(payload: any) {
-        // Verificar que el usuario aún existe
         const user = await this.usersService.findById(payload.sub);
-        return user; // Esto va a req.user en los controllers
+        if (!user) {
+            throw new UnauthorizedException('Usuario no encontrado');
+        }
+        return user;
     }
 }

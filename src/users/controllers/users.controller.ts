@@ -2,9 +2,11 @@ import { Controller, Get, Patch, Delete, Body, UseGuards, Request } from '@nestj
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from '../services/users.service';
 import { UpdateProfileDto } from '../dto/update-user.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
+@UseGuards(JwtAuthGuard) // ← APLICAR EL GUARD
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
@@ -48,7 +50,7 @@ export class UsersController {
   async deleteAccount(@Request() req) {
     const deleted = await this.usersService.deleteAccount(req.user.id);
     return {
-      success: deleted,
+      success: !!deleted,
       message: deleted ? 'Account deleted successfully' : 'Account not found'
     };
   }

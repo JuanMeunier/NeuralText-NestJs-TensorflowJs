@@ -10,10 +10,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         private configService: ConfigService,
         private authService: AuthService,
     ) {
+        const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
+        const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
+
+        // Validar que las variables de entorno existen
+        if (!clientID) {
+            throw new Error('GOOGLE_CLIENT_ID is not defined in environment variables');
+        }
+
+        if (!clientSecret) {
+            throw new Error('GOOGLE_CLIENT_SECRET is not defined in environment variables');
+        }
+
         super({
-            clientID: configService.get<string>('auth.googleClientId'),
-            clientSecret: configService.get<string>('auth.googleClientSecret'),
-            callbackURL: '/auth/google/callback',
+            clientID,
+            clientSecret,
+            callbackURL: 'http://localhost:3000/auth/google/callback',
             scope: ['email', 'profile'],
         });
     }
@@ -24,19 +36,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         profile: any,
         done: VerifyCallback,
     ): Promise<any> {
-        // AQUÍ ES DONDE SE CONECTA CON GOOGLE
-        // Google ya autenticó al usuario y nos da su perfil
+        try {
+            const userData = {
+                email: profile.emails[0].value,
+                name: profile.displayName,
+                picture: profile.photos[0].value,
+                googleId: profile.id,
+            };
 
-        const userData = {
-            email: profile.emails[0].value,
-            name: profile.displayName,
-            picture: profile.photos[0].value,
-            googleId: profile.id,
-        };
-
-        // Aquí usamos findOrCreate para registrar/login
-        const user = await this.authService.validateGoogleUser(userData);
-
-        done(null, user);
+            const result = await this.authService.validateGoogleUser(userData);
+            done(null, result);
+        } catch (error) {
+            done(error);
+        }
     }
 }

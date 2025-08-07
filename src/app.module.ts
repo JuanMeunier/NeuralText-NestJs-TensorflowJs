@@ -5,19 +5,16 @@ import { TextAnalysisModule } from './text-analysis/text-analysis.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // ConfigService disponible globalmente
-      envFilePath: '.env', // opcional si usás otro archivo
+      isGlobal: true,
+      envFilePath: '.env',
     }),
     DatabaseModule,
     UsersModule,
-    TextAnalysisModule,
-    AuthModule
-
+    AuthModule,
+    TextAnalysisModule
   ],
-
 })
 export class AppModule { }
