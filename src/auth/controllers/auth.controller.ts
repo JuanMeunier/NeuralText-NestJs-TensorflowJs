@@ -1,3 +1,4 @@
+// src/auth/controllers/auth.controller.ts
 import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -17,15 +18,34 @@ export class AuthController {
     @Get('google/callback')
     @ApiOperation({ summary: 'Callback de Google OAuth' })
     @ApiResponse({
-        status: 302,
-        description: 'Redirige al frontend con token'
+        status: 200,
+        description: 'Login exitoso - devuelve token JWT',
+        example: {
+            message: "Login successful",
+            user: {
+                id: "uuid-123",
+                email: "usuario@gmail.com",
+                name: "Juan Pérez"
+            },
+            accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        }
     })
     @UseGuards(AuthGuard('google'))
     async googleCallback(@Req() req, @Res() res: Response) {
         const { user, accessToken } = req.user;
 
-        const frontendUrl = `http://localhost:4200/auth/success?token=${accessToken}`;
-        return res.redirect(frontendUrl);
+        // ✅ En lugar de redirigir, devolver JSON con el token
+        return res.json({
+            message: 'Login successful',
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                picture: user.picture
+            },
+            accessToken,
+            instructions: 'Copy the accessToken and use it as: Bearer <token> in Swagger Authorization'
+        });
     }
 
     @Get('logout')

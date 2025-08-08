@@ -3,10 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
 
   // Habilita la validación automática de DTOs
   app.useGlobalPipes(
@@ -17,20 +15,23 @@ async function bootstrap() {
     }),
   );
 
-  // Configuración de Swagger
+  // Configuración de Swagger MEJORADA
   const config = new DocumentBuilder()
-    .setTitle('Gestor de Inventario')
-    .setDescription('Documentación de la API del sistema de inventario')
+    .setTitle('Neural Text API') // ← CAMBIAR EL TÍTULO
+    .setDescription('API de análisis de texto usando modelos de IA para sentimientos, emociones, entidades e intenciones')
     .setVersion('1.0')
-    .addTag('Users') // Opcional, para agrupar endpoints
-    .addTag('Text')
-    .addTag('Auth')
+    .addBearerAuth() // ← AGREGAR SOPORTE PARA JWT
+    .addTag('Auth', 'Endpoints de autenticación con Google OAuth')
+    .addTag('Users', 'Gestión de perfiles de usuario')
+    .addTag('Text Analysis', 'Análisis de texto con modelos de IA')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); // Accedé en http://localhost:3000/api
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`🚀 API corriendo en: http://localhost:${process.env.PORT ?? 3000}`);
+  console.log(`📚 Documentación en: http://localhost:${process.env.PORT ?? 3000}/api`);
 }
 
 bootstrap().catch((err) => {
